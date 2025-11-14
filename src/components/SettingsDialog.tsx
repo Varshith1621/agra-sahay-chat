@@ -19,8 +19,6 @@ import {
 interface SettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  apiKey: string;
-  onApiKeyChange: (key: string) => void;
   language: string;
   onLanguageChange: (lang: string) => void;
   onClearHistory: () => void;
@@ -37,8 +35,6 @@ const languages = [
 export function SettingsDialog({
   open,
   onOpenChange,
-  apiKey,
-  onApiKeyChange,
   language,
   onLanguageChange,
   onClearHistory,
@@ -53,28 +49,6 @@ export function SettingsDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="api-key">Perplexity API Key</Label>
-            <Input
-              id="api-key"
-              type="password"
-              value={apiKey}
-              onChange={(e) => onApiKeyChange(e.target.value)}
-              placeholder="Enter your Perplexity API key"
-            />
-            <p className="text-xs text-muted-foreground">
-              Get your API key from{" "}
-              <a
-                href="https://www.perplexity.ai/settings/api"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline"
-              >
-                perplexity.ai/settings/api
-              </a>
-            </p>
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="language">Language</Label>
             <Select value={language} onValueChange={onLanguageChange}>
