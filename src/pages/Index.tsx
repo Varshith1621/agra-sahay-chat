@@ -5,7 +5,7 @@ import { ChatInput } from "@/components/ChatInput";
 import { TypingIndicator } from "@/components/TypingIndicator";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { sendMessage } from "@/utils/perplexity";
+import { sendMessageToAI } from "@/utils/chatService";
 import { toast } from "sonner";
 import { Sprout } from "lucide-react";
 
@@ -26,7 +26,6 @@ const Index = () => {
   const [currentConversationId, setCurrentConversationId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [apiKey, setApiKey] = useState("");
   const [language, setLanguage] = useState("en");
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -34,7 +33,6 @@ const Index = () => {
   // Load data from localStorage
   useEffect(() => {
     const savedConversations = localStorage.getItem("agri-conversations");
-    const savedApiKey = localStorage.getItem("agri-api-key");
     const savedLanguage = localStorage.getItem("agri-language");
     const savedTheme = localStorage.getItem("agri-theme");
 
@@ -45,15 +43,8 @@ const Index = () => {
         setCurrentConversationId(parsed[0].id);
       }
     }
-    if (savedApiKey) setApiKey(savedApiKey);
     if (savedLanguage) setLanguage(savedLanguage);
     if (savedTheme) setTheme(savedTheme as "light" | "dark");
-
-    // Show settings if no API key
-    if (!savedApiKey) {
-      setSettingsOpen(true);
-      toast.info("Please configure your Perplexity API key to get started");
-    }
   }, []);
 
   // Save to localStorage
@@ -62,12 +53,6 @@ const Index = () => {
       localStorage.setItem("agri-conversations", JSON.stringify(conversations));
     }
   }, [conversations]);
-
-  useEffect(() => {
-    if (apiKey) {
-      localStorage.setItem("agri-api-key", apiKey);
-    }
-  }, [apiKey]);
 
   useEffect(() => {
     localStorage.setItem("agri-language", language);
@@ -99,12 +84,6 @@ const Index = () => {
   };
 
   const handleSendMessage = async (content: string) => {
-    if (!apiKey) {
-      toast.error("Please configure your API key in settings");
-      setSettingsOpen(true);
-      return;
-    }
-
     if (!currentConversationId) {
       handleNewChat();
       return;
@@ -129,9 +108,8 @@ const Index = () => {
     setIsLoading(true);
 
     try {
-      const response = await sendMessage(
+      const response = await sendMessageToAI(
         [...(currentConversation?.messages || []), userMessage],
-        apiKey,
         language
       );
 
@@ -210,8 +188,6 @@ const Index = () => {
       <SettingsDialog
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
-        apiKey={apiKey}
-        onApiKeyChange={setApiKey}
         language={language}
         onLanguageChange={setLanguage}
         onClearHistory={handleClearHistory}
