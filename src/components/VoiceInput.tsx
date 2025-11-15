@@ -29,6 +29,14 @@ export default function VoiceInput({ onTranscript, language }: VoiceInputProps) 
       kn: "kn-IN",
       te: "te-IN",
       ta: "ta-IN",
+      bn: "bn-IN",
+      mr: "mr-IN",
+      gu: "gu-IN",
+      pa: "pa-IN",
+      ml: "ml-IN",
+      or: "or-IN",
+      as: "as-IN",
+      ur: "ur-IN",
     };
     recognitionInstance.lang = langMap[language] || "en-IN";
 

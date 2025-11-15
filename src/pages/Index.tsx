@@ -242,7 +242,7 @@ export default function Index() {
               </SheetContent>
             </Sheet>
             <Sprout className="h-6 w-6 text-primary md:hidden" />
-            <span className="font-semibold">Agricultural Assistant</span>
+            <span className="font-semibold hidden sm:inline">Agricultural Assistant</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -265,28 +265,70 @@ export default function Index() {
         <ScrollArea className="flex-1">
           <div className="max-w-4xl mx-auto p-4 space-y-6">
             {messages.length === 0 ? (
-              <div className="text-center py-16">
-                <Sprout className="h-16 w-16 mx-auto mb-4 text-primary" />
-                <h2 className="text-2xl font-bold mb-2">Welcome to AgriBot</h2>
-                <p className="text-muted-foreground mb-8">
-                  Your intelligent agricultural assistant for farming advice, crop management, and market insights.
+              <div className="text-center py-8 md:py-16 px-4">
+                <div className="inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 bg-primary/10 rounded-full mb-6">
+                  <Sprout className="h-10 w-10 md:h-16 md:w-16 text-primary" />
+                </div>
+                <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3">Welcome to AgriBot</h2>
+                <p className="text-sm md:text-base text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+                  Your intelligent agricultural assistant for farming advice, crop management, market insights, and government schemes.
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                  <div className="p-4 border border-border rounded-lg hover:bg-muted transition-colors">
-                    <h3 className="font-semibold mb-2">🌾 Crop Advisory</h3>
-                    <p className="text-sm text-muted-foreground">Get recommendations on crops, fertilizers, and pest control</p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3 md:gap-4 max-w-3xl mx-auto mb-8">
+                  <div className="group p-4 md:p-6 border-2 border-border rounded-xl hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer bg-card">
+                    <div className="text-3xl md:text-4xl mb-3">🌾</div>
+                    <h3 className="font-semibold text-base md:text-lg mb-2">Crop Advisory</h3>
+                    <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+                      Expert recommendations on crops, fertilizers, irrigation, and pest control
+                    </p>
                   </div>
-                  <div className="p-4 border border-border rounded-lg hover:bg-muted transition-colors">
-                    <h3 className="font-semibold mb-2">🌤️ Weather Guidance</h3>
-                    <p className="text-sm text-muted-foreground">Weather-based farming suggestions and planning</p>
+                  
+                  <div className="group p-4 md:p-6 border-2 border-border rounded-xl hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer bg-card">
+                    <div className="text-3xl md:text-4xl mb-3">🌤️</div>
+                    <h3 className="font-semibold text-base md:text-lg mb-2">Weather Guidance</h3>
+                    <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+                      Real-time weather-based farming suggestions and seasonal planning
+                    </p>
                   </div>
-                  <div className="p-4 border border-border rounded-lg hover:bg-muted transition-colors">
-                    <h3 className="font-semibold mb-2">📊 Market Intelligence</h3>
-                    <p className="text-sm text-muted-foreground">Current prices and best time to sell your crops</p>
+                  
+                  <div className="group p-4 md:p-6 border-2 border-border rounded-xl hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer bg-card">
+                    <div className="text-3xl md:text-4xl mb-3">📊</div>
+                    <h3 className="font-semibold text-base md:text-lg mb-2">Market Intelligence</h3>
+                    <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+                      Current crop prices, market trends, and best time to sell
+                    </p>
                   </div>
-                  <div className="p-4 border border-border rounded-lg hover:bg-muted transition-colors">
-                    <h3 className="font-semibold mb-2">🏛️ Government Schemes</h3>
-                    <p className="text-sm text-muted-foreground">Information on subsidies and agricultural programs</p>
+                  
+                  <div className="group p-4 md:p-6 border-2 border-border rounded-xl hover:border-primary/50 hover:shadow-lg transition-all duration-300 cursor-pointer bg-card">
+                    <div className="text-3xl md:text-4xl mb-3">🏛️</div>
+                    <h3 className="font-semibold text-base md:text-lg mb-2">Government Schemes</h3>
+                    <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+                      Information on subsidies, loans, and agricultural programs
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 md:p-6 max-w-2xl mx-auto">
+                  <h3 className="font-semibold text-sm md:text-base mb-3 text-primary">Try asking:</h3>
+                  <div className="grid grid-cols-1 gap-2 text-left">
+                    <button 
+                      onClick={() => handleSendMessage("What crops are best for monsoon season?")}
+                      className="text-xs md:text-sm p-3 bg-background hover:bg-muted rounded-lg transition-colors text-left border border-border"
+                    >
+                      💧 What crops are best for monsoon season?
+                    </button>
+                    <button 
+                      onClick={() => handleSendMessage("How can I control pests in my wheat field?")}
+                      className="text-xs md:text-sm p-3 bg-background hover:bg-muted rounded-lg transition-colors text-left border border-border"
+                    >
+                      🐛 How can I control pests in my wheat field?
+                    </button>
+                    <button 
+                      onClick={() => handleSendMessage("What government schemes are available for small farmers?")}
+                      className="text-xs md:text-sm p-3 bg-background hover:bg-muted rounded-lg transition-colors text-left border border-border"
+                    >
+                      📋 What government schemes are available for small farmers?
+                    </button>
                   </div>
                 </div>
               </div>
@@ -314,17 +356,26 @@ export default function Index() {
           </div>
         </ScrollArea>
 
-        <footer className="border-t border-border p-4">
-          <div className="max-w-4xl mx-auto flex gap-2 items-end">
-            <div className="flex gap-2">
-              <VoiceInput onTranscript={handleSendMessage} language={language} />
-              <ImageUpload
-                onImageSelect={setImagePreview}
-                onImageRemove={() => setImagePreview(null)}
-                imagePreview={imagePreview}
-              />
+        <footer className="border-t border-border p-3 md:p-4 bg-background">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex gap-2 items-end">
+              <div className="flex gap-2 shrink-0">
+                <VoiceInput onTranscript={handleSendMessage} language={language} />
+                <ImageUpload
+                  onImageSelect={setImagePreview}
+                  onImageRemove={() => setImagePreview(null)}
+                  imagePreview={imagePreview}
+                />
+              </div>
+              <div className="flex-1">
+                <ChatInput onSend={handleSendMessage} disabled={isLoading} />
+              </div>
             </div>
-            <ChatInput onSend={handleSendMessage} disabled={isLoading} />
+            {imagePreview && (
+              <p className="text-xs text-muted-foreground mt-2 text-center">
+                Image ready for analysis
+              </p>
+            )}
           </div>
         </footer>
       </div>
