@@ -1,199 +1,333 @@
 import { useState, useEffect, useRef } from "react";
-import { ChatSidebar } from "@/components/ChatSidebar";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { sendMessageToAI } from "@/utils/chatService";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
-import { TypingIndicator } from "@/components/TypingIndicator";
 import { SettingsDialog } from "@/components/SettingsDialog";
+import ConversationList from "@/components/ConversationList";
+import VoiceInput from "@/components/VoiceInput";
+import ImageUpload from "@/components/ImageUpload";
+import { TypingIndicator } from "@/components/TypingIndicator";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { sendMessageToAI } from "@/utils/chatService";
 import { toast } from "sonner";
-import { Sprout } from "lucide-react";
+import { Menu, Sprout, LogOut, Download, Star } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
-}
-
-interface Conversation {
   id: string;
-  title: string;
-  messages: Message[];
-  timestamp: number;
+  isFavorite?: boolean;
 }
 
-const Index = () => {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [currentConversationId, setCurrentConversationId] = useState<string>("");
+export default function Index() {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [language, setLanguage] = useState("en");
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
-  // Load data from localStorage
   useEffect(() => {
-    const savedConversations = localStorage.getItem("agri-conversations");
-    const savedLanguage = localStorage.getItem("agri-language");
-    const savedTheme = localStorage.getItem("agri-theme");
-
-    if (savedConversations) {
-      const parsed = JSON.parse(savedConversations);
-      setConversations(parsed);
-      if (parsed.length > 0) {
-        setCurrentConversationId(parsed[0].id);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate("/auth");
+      } else {
+        setUser(session.user);
       }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        navigate("/auth");
+      } else {
+        setUser(session.user);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (currentConversationId) {
+      loadConversation(currentConversationId);
+    } else {
+      setMessages([]);
     }
-    if (savedLanguage) setLanguage(savedLanguage);
-    if (savedTheme) setTheme(savedTheme as "light" | "dark");
-  }, []);
+  }, [currentConversationId]);
 
-  // Save to localStorage
   useEffect(() => {
-    if (conversations.length > 0) {
-      localStorage.setItem("agri-conversations", JSON.stringify(conversations));
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const loadConversation = async (conversationId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*, favorites(id)")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      setMessages(
+        data.map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          isFavorite: msg.favorites.length > 0,
+        }))
+      );
+    } catch (error: any) {
+      console.error("Error loading conversation:", error);
+      toast.error("Failed to load conversation");
     }
-  }, [conversations]);
+  };
 
-  useEffect(() => {
-    localStorage.setItem("agri-language", language);
-  }, [language]);
+  const saveMessage = async (conversationId: string, role: string, content: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .insert({ conversation_id: conversationId, role, content })
+        .select()
+        .single();
 
-  useEffect(() => {
-    localStorage.setItem("agri-theme", theme);
-    document.documentElement.classList.toggle("dark", theme === "dark");
-  }, [theme]);
-
-  // Auto-scroll to bottom
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: "smooth" });
+      if (error) throw error;
+      return data.id;
+    } catch (error: any) {
+      console.error("Error saving message:", error);
+      throw error;
     }
-  }, [conversations, isLoading]);
-
-  const currentConversation = conversations.find((c) => c.id === currentConversationId);
-
-  const handleNewChat = () => {
-    const newConv: Conversation = {
-      id: Date.now().toString(),
-      title: "New Chat",
-      messages: [],
-      timestamp: Date.now(),
-    };
-    setConversations([newConv, ...conversations]);
-    setCurrentConversationId(newConv.id);
   };
 
   const handleSendMessage = async (content: string) => {
-    if (!currentConversationId) {
-      handleNewChat();
-      return;
+    if (!content.trim() && !imagePreview) return;
+
+    let conversationId = currentConversationId;
+
+    if (!conversationId) {
+      try {
+        const { data, error } = await supabase
+          .from("conversations")
+          .insert({ user_id: user.id, title: content.slice(0, 50) })
+          .select()
+          .single();
+
+        if (error) throw error;
+        conversationId = data.id;
+        setCurrentConversationId(conversationId);
+      } catch (error: any) {
+        toast.error("Failed to create conversation");
+        return;
+      }
     }
 
-    const userMessage: Message = { role: "user", content };
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: content.trim() || "Analyze this image",
+    };
 
-    // Update conversation with user message
-    setConversations((prev) =>
-      prev.map((conv) =>
-        conv.id === currentConversationId
-          ? {
-              ...conv,
-              messages: [...conv.messages, userMessage],
-              title: conv.messages.length === 0 ? content.slice(0, 50) : conv.title,
-              timestamp: Date.now(),
-            }
-          : conv
-      )
-    );
-
+    setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
+    setImagePreview(null);
 
     try {
+      const messageId = await saveMessage(conversationId, "user", userMessage.content);
+      userMessage.id = messageId;
+
       const response = await sendMessageToAI(
-        [...(currentConversation?.messages || []), userMessage],
+        messages
+          .concat([userMessage])
+          .map((m) => ({ role: m.role, content: m.content })),
         language
       );
 
-      const assistantMessage: Message = { role: "assistant", content: response };
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: response,
+      };
 
-      setConversations((prev) =>
-        prev.map((conv) =>
-          conv.id === currentConversationId
-            ? {
-                ...conv,
-                messages: [...conv.messages, assistantMessage],
-                timestamp: Date.now(),
-              }
-            : conv
-        )
-      );
-    } catch (error) {
-      console.error("Error sending message:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to send message");
+      const assistantId = await saveMessage(conversationId, "assistant", response);
+      assistantMessage.id = assistantId;
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error: any) {
+      console.error("Error:", error);
+      toast.error(error.message || "Failed to get response");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleClearHistory = () => {
-    if (confirm("Are you sure you want to clear all chat history?")) {
-      setConversations([]);
-      setCurrentConversationId("");
-      localStorage.removeItem("agri-conversations");
-      toast.success("Chat history cleared");
-      setSettingsOpen(false);
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
+
+  const handleExportPDF = () => {
+    const content = messages
+      .map((m) => `${m.role === "user" ? "You" : "AgriBot"}: ${m.content}`)
+      .join("\n\n");
+
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "agribot-chat-export.txt";
+    a.click();
+    toast.success("Chat exported successfully!");
+  };
+
+  const toggleFavorite = async (messageId: string) => {
+    const message = messages.find((m) => m.id === messageId);
+    if (!message) return;
+
+    try {
+      if (message.isFavorite) {
+        await supabase.from("favorites").delete().eq("message_id", messageId);
+      } else {
+        await supabase.from("favorites").insert({ user_id: user.id, message_id: messageId });
+      }
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId ? { ...m, isFavorite: !m.isFavorite } : m
+        )
+      );
+    } catch (error: any) {
+      toast.error("Failed to update favorite");
     }
   };
 
+  if (!user) return null;
+
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background">
-      <ChatSidebar
-        conversations={conversations}
-        currentConversationId={currentConversationId}
-        onNewChat={handleNewChat}
-        onSelectConversation={setCurrentConversationId}
-        onOpenSettings={() => setSettingsOpen(true)}
-        theme={theme}
-        onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")}
-      />
+    <div className="min-h-screen flex bg-background">
+      <aside className="hidden md:flex w-64 border-r border-border flex-col">
+        <div className="p-4 border-b border-border flex items-center gap-2">
+          <Sprout className="h-6 w-6 text-primary" />
+          <h1 className="text-xl font-bold">AgriBot</h1>
+        </div>
+        <ConversationList
+          currentConversationId={currentConversationId}
+          onSelectConversation={setCurrentConversationId}
+        />
+      </aside>
 
       <div className="flex-1 flex flex-col">
-        {!currentConversation || currentConversation.messages.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center space-y-4 p-8">
-              <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
-                <Sprout className="h-8 w-8 text-primary" />
-              </div>
-              <h1 className="text-3xl font-bold">Agricultural Assistant</h1>
-              <p className="text-muted-foreground max-w-md">
-                Ask me anything about crops, weather, market prices, government schemes, and more.
-                I'm here to help farmers with expert agricultural advice.
-              </p>
-            </div>
+        <header className="h-16 border-b border-border flex items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-64">
+                <div className="p-4 border-b border-border flex items-center gap-2">
+                  <Sprout className="h-6 w-6 text-primary" />
+                  <h1 className="text-xl font-bold">AgriBot</h1>
+                </div>
+                <ConversationList
+                  currentConversationId={currentConversationId}
+                  onSelectConversation={setCurrentConversationId}
+                />
+              </SheetContent>
+            </Sheet>
+            <Sprout className="h-6 w-6 text-primary md:hidden" />
+            <span className="font-semibold">Agricultural Assistant</span>
           </div>
-        ) : (
-          <ScrollArea className="flex-1">
-            <div className="pb-32">
-              {currentConversation.messages.map((msg, idx) => (
-                <ChatMessage key={idx} role={msg.role} content={msg.content} />
-              ))}
-              {isLoading && <TypingIndicator />}
-              <div ref={scrollRef} />
+
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={handleExportPDF} title="Export Chat">
+              <Download className="h-5 w-5" />
+            </Button>
+            <SettingsDialog 
+              open={settingsOpen} 
+              onOpenChange={setSettingsOpen} 
+              language={language} 
+              onLanguageChange={setLanguage}
+              onClearHistory={() => {}}
+            />
+            <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign Out">
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
+        </header>
+
+        <ScrollArea className="flex-1">
+          <div className="max-w-4xl mx-auto p-4 space-y-6">
+            {messages.length === 0 ? (
+              <div className="text-center py-16">
+                <Sprout className="h-16 w-16 mx-auto mb-4 text-primary" />
+                <h2 className="text-2xl font-bold mb-2">Welcome to AgriBot</h2>
+                <p className="text-muted-foreground mb-8">
+                  Your intelligent agricultural assistant for farming advice, crop management, and market insights.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                  <div className="p-4 border border-border rounded-lg hover:bg-muted transition-colors">
+                    <h3 className="font-semibold mb-2">🌾 Crop Advisory</h3>
+                    <p className="text-sm text-muted-foreground">Get recommendations on crops, fertilizers, and pest control</p>
+                  </div>
+                  <div className="p-4 border border-border rounded-lg hover:bg-muted transition-colors">
+                    <h3 className="font-semibold mb-2">🌤️ Weather Guidance</h3>
+                    <p className="text-sm text-muted-foreground">Weather-based farming suggestions and planning</p>
+                  </div>
+                  <div className="p-4 border border-border rounded-lg hover:bg-muted transition-colors">
+                    <h3 className="font-semibold mb-2">📊 Market Intelligence</h3>
+                    <p className="text-sm text-muted-foreground">Current prices and best time to sell your crops</p>
+                  </div>
+                  <div className="p-4 border border-border rounded-lg hover:bg-muted transition-colors">
+                    <h3 className="font-semibold mb-2">🏛️ Government Schemes</h3>
+                    <p className="text-sm text-muted-foreground">Information on subsidies and agricultural programs</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              messages.map((message) => (
+                <div key={message.id} className="flex gap-2 items-start">
+                  <div className="flex-1">
+                    <ChatMessage role={message.role} content={message.content} />
+                  </div>
+                  {message.role === "assistant" && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      onClick={() => toggleFavorite(message.id)}
+                    >
+                      <Star className={`h-4 w-4 ${message.isFavorite ? "fill-yellow-400 text-yellow-400" : ""}`} />
+                    </Button>
+                  )}
+                </div>
+              ))
+            )}
+            {isLoading && <TypingIndicator />}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+
+        <footer className="border-t border-border p-4">
+          <div className="max-w-4xl mx-auto flex gap-2 items-end">
+            <div className="flex gap-2">
+              <VoiceInput onTranscript={handleSendMessage} language={language} />
+              <ImageUpload
+                onImageSelect={setImagePreview}
+                onImageRemove={() => setImagePreview(null)}
+                imagePreview={imagePreview}
+              />
             </div>
-          </ScrollArea>
-        )}
-
-        <ChatInput onSend={handleSendMessage} disabled={isLoading} />
+            <ChatInput onSend={handleSendMessage} disabled={isLoading} />
+          </div>
+        </footer>
       </div>
-
-      <SettingsDialog
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        language={language}
-        onLanguageChange={setLanguage}
-        onClearHistory={handleClearHistory}
-      />
     </div>
   );
-};
-
-export default Index;
+}
