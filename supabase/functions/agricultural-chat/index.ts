@@ -33,10 +33,10 @@ serve(async (req) => {
 
   try {
     const { messages, language = 'en' } = await req.json();
-    const perplexityApiKey = Deno.env.get('PERPLEXITY_API_KEY');
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
-    if (!perplexityApiKey) {
-      console.error('PERPLEXITY_API_KEY not configured');
+    if (!lovableApiKey) {
+      console.error('LOVABLE_API_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'API key not configured on server' }),
         { 
@@ -48,15 +48,15 @@ serve(async (req) => {
 
     const systemPrompt = SYSTEM_PROMPTS[language] || SYSTEM_PROMPTS.en;
 
-    console.log('Sending request to Perplexity API...');
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+    console.log('Sending request to Lovable AI...');
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${perplexityApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
+        model: 'google/gemini-2.5-flash',
         messages: [
           {
             role: 'system',
@@ -73,9 +73,24 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Perplexity API error:', response.status, errorText);
+      console.error('Lovable AI error:', response.status, errorText);
+      
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: 'Payment required. Please add credits to your workspace.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
-        JSON.stringify({ error: `API request failed: ${response.status}` }),
+        JSON.stringify({ error: `AI request failed: ${response.status}` }),
         { 
           status: response.status, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
