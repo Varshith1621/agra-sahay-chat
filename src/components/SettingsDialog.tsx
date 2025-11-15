@@ -25,11 +25,19 @@ interface SettingsDialogProps {
 }
 
 const languages = [
-  { value: "en", label: "English" },
-  { value: "hi", label: "हिंदी (Hindi)" },
-  { value: "kn", label: "ಕನ್ನಡ (Kannada)" },
-  { value: "te", label: "తెలుగు (Telugu)" },
-  { value: "ta", label: "தமிழ் (Tamil)" },
+  { value: "en", label: "🇬🇧 English" },
+  { value: "hi", label: "🇮🇳 हिंदी (Hindi)" },
+  { value: "kn", label: "🇮🇳 ಕನ್ನಡ (Kannada)" },
+  { value: "te", label: "🇮🇳 తెలుగు (Telugu)" },
+  { value: "ta", label: "🇮🇳 தமிழ் (Tamil)" },
+  { value: "bn", label: "🇮🇳 বাংলা (Bengali)" },
+  { value: "mr", label: "🇮🇳 मराठी (Marathi)" },
+  { value: "gu", label: "🇮🇳 ગુજરાતી (Gujarati)" },
+  { value: "pa", label: "🇮🇳 ਪੰਜਾਬੀ (Punjabi)" },
+  { value: "ml", label: "🇮🇳 മലയാളം (Malayalam)" },
+  { value: "or", label: "🇮🇳 ଓଡ଼ିଆ (Odia)" },
+  { value: "as", label: "🇮🇳 অসমীয়া (Assamese)" },
+  { value: "ur", label: "🇮🇳 اردو (Urdu)" },
 ];
 
 export function SettingsDialog({
@@ -55,7 +63,7 @@ export function SettingsDialog({
               <SelectTrigger id="language">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-popover z-50">
                 {languages.map((lang) => (
                   <SelectItem key={lang.value} value={lang.value}>
                     {lang.label}
