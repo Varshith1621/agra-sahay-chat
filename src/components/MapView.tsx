@@ -2,8 +2,9 @@ import { useState } from "react";
 import { APIProvider, Map, Marker, InfoWindow } from "@vis.gl/react-google-maps";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { MapPin, Store, Cloud } from "lucide-react";
+import { MapPin, Store, Cloud, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MapChatInterface } from "./MapChatInterface";
 
 const GOOGLE_MAPS_API_KEY = "AIzaSyDVb4t2_a7x62PYX8AF-vWYsUt1Au2K4Ls";
 
@@ -67,22 +68,23 @@ const MapView = () => {
 
   return (
     <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
-      <Card className="w-full h-[600px] p-4">
-        <Tabs defaultValue="markets" className="h-full flex flex-col">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="markets" className="flex items-center gap-2">
-              <Store className="h-4 w-4" />
-              Markets
-            </TabsTrigger>
-            <TabsTrigger value="farms" className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              My Farms
-            </TabsTrigger>
-            <TabsTrigger value="weather" className="flex items-center gap-2">
-              <Cloud className="h-4 w-4" />
-              Weather
-            </TabsTrigger>
-          </TabsList>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[600px]">
+        <Card className="lg:col-span-2 p-4">
+          <Tabs defaultValue="markets" className="h-full flex flex-col">
+            <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsTrigger value="markets" className="flex items-center gap-2">
+                <Store className="h-4 w-4" />
+                Markets
+              </TabsTrigger>
+              <TabsTrigger value="farms" className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                My Farms
+              </TabsTrigger>
+              <TabsTrigger value="weather" className="flex items-center gap-2">
+                <Cloud className="h-4 w-4" />
+                Weather
+              </TabsTrigger>
+            </TabsList>
 
           <TabsContent value="markets" className="flex-1 mt-0">
             <Map
@@ -170,6 +172,11 @@ const MapView = () => {
           </TabsContent>
         </Tabs>
       </Card>
+      
+      <div className="lg:col-span-1">
+        <MapChatInterface />
+      </div>
+    </div>
     </APIProvider>
   );
 };
