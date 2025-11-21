@@ -9,11 +9,12 @@ import ConversationList from "@/components/ConversationList";
 import VoiceInput from "@/components/VoiceInput";
 import ImageUpload from "@/components/ImageUpload";
 import { TypingIndicator } from "@/components/TypingIndicator";
+import MapView from "@/components/MapView";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Menu, Sprout, LogOut, Download, Star } from "lucide-react";
+import { Menu, Sprout, LogOut, Download, Star, Map } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
@@ -27,6 +28,7 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(false);
   const [language, setLanguage] = useState("en");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -246,6 +248,9 @@ export default function Index() {
           </div>
 
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setMapOpen(!mapOpen)} title="Maps">
+              <Map className="h-5 w-5" />
+            </Button>
             <Button variant="ghost" size="icon" onClick={handleExportPDF} title="Export Chat">
               <Download className="h-5 w-5" />
             </Button>
@@ -271,6 +276,11 @@ export default function Index() {
 
         <ScrollArea className="flex-1">
           <div className="max-w-4xl mx-auto p-4 space-y-6">
+            {mapOpen && (
+              <div className="mb-6">
+                <MapView />
+              </div>
+            )}
             {messages.length === 0 ? (
               <div className="text-center py-8 md:py-16 px-4">
                 <div className="inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 bg-primary/10 rounded-full mb-6">
