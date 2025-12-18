@@ -53,6 +53,28 @@ const MapView = () => {
   const [selectedFarm, setSelectedFarm] = useState<FarmLocation | null>(null);
   const [farmLocations, setFarmLocations] = useState<FarmLocation[]>([]);
   const [center, setCenter] = useState({ lat: 20.5937, lng: 78.9629 }); // Center of India
+  const [searchedLocation, setSearchedLocation] = useState<{ lat: number; lng: number; name: string } | null>(null);
+  const [mapZoom, setMapZoom] = useState(5);
+
+  const handleLocationDetected = async (query: string) => {
+    try {
+      // Use Google Geocoding API to convert location name to coordinates
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query + ", India")}&key=${GOOGLE_MAPS_API_KEY}`
+      );
+      const data = await response.json();
+      
+      if (data.results && data.results.length > 0) {
+        const location = data.results[0].geometry.location;
+        const locationName = data.results[0].formatted_address;
+        setSearchedLocation({ lat: location.lat, lng: location.lng, name: locationName });
+        setCenter({ lat: location.lat, lng: location.lng });
+        setMapZoom(10);
+      }
+    } catch (error) {
+      console.error("Geocoding error:", error);
+    }
+  };
 
   const handleMapClick = (e: any) => {
     if (e.detail && e.detail.latLng) {
@@ -88,11 +110,27 @@ const MapView = () => {
 
           <TabsContent value="markets" className="flex-1 mt-0">
             <Map
-              defaultCenter={center}
-              defaultZoom={5}
+              center={center}
+              zoom={mapZoom}
               gestureHandling="greedy"
               disableDefaultUI={false}
             >
+              {searchedLocation && (
+                <Marker
+                  position={{ lat: searchedLocation.lat, lng: searchedLocation.lng }}
+                  title={searchedLocation.name}
+                />
+              )}
+              {searchedLocation && (
+                <InfoWindow
+                  position={{ lat: searchedLocation.lat, lng: searchedLocation.lng }}
+                >
+                  <div className="p-2">
+                    <h3 className="font-semibold text-sm">{searchedLocation.name}</h3>
+                    <p className="text-xs text-gray-600">📍 Selected Location</p>
+                  </div>
+                </InfoWindow>
+              )}
               {sampleMarkets.map((market) => (
                 <Marker
                   key={market.id}
@@ -174,7 +212,7 @@ const MapView = () => {
       </Card>
       
       <div className="lg:col-span-1">
-        <MapChatInterface />
+        <MapChatInterface onLocationDetected={handleLocationDetected} />
       </div>
     </div>
     </APIProvider>

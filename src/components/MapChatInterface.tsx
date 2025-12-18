@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
-import { Send, Loader2 } from "lucide-react";
+import { Send, Loader2, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 type Message = {
@@ -11,7 +11,11 @@ type Message = {
   content: string;
 };
 
-export const MapChatInterface = () => {
+interface MapChatInterfaceProps {
+  onLocationDetected?: (location: string) => void;
+}
+
+export const MapChatInterface = ({ onLocationDetected }: MapChatInterfaceProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -129,6 +133,12 @@ export const MapChatInterface = () => {
 
     const userMessage: Message = { role: "user", content: input };
     setMessages(prev => [...prev, userMessage]);
+    
+    // Try to detect location from user input
+    if (onLocationDetected) {
+      onLocationDetected(input);
+    }
+    
     setInput("");
     setIsLoading(true);
 
@@ -138,9 +148,12 @@ export const MapChatInterface = () => {
   return (
     <Card className="flex flex-col h-full">
       <div className="p-4 border-b">
-        <h3 className="font-semibold">Map Assistant</h3>
-        <p className="text-sm text-muted-foreground">
-          Ask about markets, weather, or farm locations
+        <div className="flex items-center gap-2">
+          <MapPin className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold">Agricultural Advisor</h3>
+        </div>
+        <p className="text-sm text-muted-foreground mt-1">
+          Type a location to get weather, crop & pesticide recommendations
         </p>
       </div>
 
@@ -148,8 +161,15 @@ export const MapChatInterface = () => {
         <div className="space-y-4">
           {messages.length === 0 && (
             <div className="text-center text-muted-foreground py-8">
-              <p>Ask me anything about agricultural maps, weather, or markets!</p>
-              <p className="text-sm mt-2">Try: "What are the nearby markets?" or "Show weather forecast"</p>
+              <MapPin className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="font-medium">Enter a location to get started!</p>
+              <p className="text-sm mt-2">Try: "Pune" or "Jaipur, Rajasthan"</p>
+              <div className="mt-4 text-xs space-y-1">
+                <p>🌤️ Weather & Climate</p>
+                <p>🌾 Crop Recommendations</p>
+                <p>🐛 Pest Control & Pesticides</p>
+                <p>🏪 Nearby Markets</p>
+              </div>
             </div>
           )}
           {messages.map((msg, idx) => (
