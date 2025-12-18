@@ -262,7 +262,16 @@ export default function Index() {
               onOpenChange={setSettingsOpen} 
               language={language} 
               onLanguageChange={setLanguage}
-              onClearHistory={() => {}}
+              onClearHistory={async () => {
+                if (currentConversationId) {
+                  await supabase.from("messages").delete().eq("conversation_id", currentConversationId);
+                  await supabase.from("conversations").delete().eq("id", currentConversationId);
+                }
+                setMessages([]);
+                setCurrentConversationId(null);
+                toast.success("Chat history cleared");
+                setSettingsOpen(false);
+              }}
               user={user}
               onSignOut={handleSignOut}
             />
