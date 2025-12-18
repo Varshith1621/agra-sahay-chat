@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Menu, Sprout, LogOut, Download, Star, Map } from "lucide-react";
+import { Menu, Sprout, Download, Star, Map, Settings } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
@@ -255,11 +255,7 @@ export default function Index() {
               <Download className="h-5 w-5" />
             </Button>
             <Button variant="ghost" size="icon" onClick={() => setSettingsOpen(true)} title="Settings">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 1v6m0 6v6m-6-6h6m6 0h-6"/>
-                <path d="m4.93 4.93 4.24 4.24m5.66 5.66 4.24 4.24m0-14.14-4.24 4.24m-5.66 5.66L4.93 19.07"/>
-              </svg>
+              <Settings className="h-5 w-5" />
             </Button>
             <SettingsDialog 
               open={settingsOpen} 
@@ -267,10 +263,9 @@ export default function Index() {
               language={language} 
               onLanguageChange={setLanguage}
               onClearHistory={() => {}}
+              user={user}
+              onSignOut={handleSignOut}
             />
-            <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign Out">
-              <LogOut className="h-5 w-5" />
-            </Button>
           </div>
         </header>
 
